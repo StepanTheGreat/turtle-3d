@@ -4,7 +4,9 @@ import math, time, gzip, base64
 W, H = 500, 500
 FOV = 90
 SIZE = 0.1
-MODEL = "" # Your custom .obj model path
+MODEL = "pigeon.obj" # Your custom .obj model path
+WIDTH = 1
+SPEED = 0
 DYNAMIC = False
 
 if not DYNAMIC:
@@ -130,8 +132,8 @@ size = [
 
 rot = rot_mat(45, 22, 0)
 
-speed(10)
-width(2)
+speed(SPEED)
+width(WIDTH)
 Screen().bgcolor("black")
 pencolor("#00FF00")
 fillcolor("black")
@@ -149,7 +151,7 @@ def depth_filter(vertices):
 
 def draw():
 	polygons = depth_filter(VERTICES)
-	for inn, vert in enumerate(polygons):
+	for vert in polygons:
 		startpoint = vert[0]
 		up()
 		setpos(*startpoint[:2])
@@ -159,15 +161,43 @@ def draw():
 			goto(*point[:2])
 		goto(*startpoint[:2])
 		end_fill()
-			
-ry = 120
+
+global rotx, roty, factor
+rotx = 0
+roty = 0
 factor = 2
 
+def key_up():
+	global rotx 
+	rotx += 5
+
+def key_down():
+	global rotx
+	rotx -= 5
+
+def key_left():
+	global factor
+	factor = max(factor-1, 0)
+
+def key_right():
+	global factor
+	factor = min(factor+1, 15)
+
+listen()
+onkey(key_up, "Up")
+onkey(key_down, "Down")
+onkey(key_left, "Left")
+onkey(key_right, "Right")
+
 while 1:
-	ry = (ry+factor)%360
-	rot = rot_mat(45, ry, 0)
+	roty += factor
+	roty = 0 if roty >= 360 else roty
+	rot = rot_mat(rotx, roty, 0)
 	clear()
 	draw()
 	if not DYNAMIC:
 		update()
+		time.sleep(2)
 	time.sleep(0.015)
+
+mainloop()
