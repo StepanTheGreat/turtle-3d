@@ -4,7 +4,7 @@ import math, time, gzip, base64
 W, H = 500, 500
 FOV = 90
 SIZE = 0.1
-MODEL = "pigeon.obj" # Your custom .obj model path
+MODEL = "" # Your custom .obj model path
 WIDTH = 1
 SPEED = 0
 DYNAMIC = False
