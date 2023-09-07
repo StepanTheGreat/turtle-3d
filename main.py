@@ -4,7 +4,7 @@ import math, time, gzip, base64
 W, H = 500, 500
 FOV = 90
 SIZE = 0.1
-MODEL = "pigeon.obj"
+MODEL = "" # Your custom .obj model path
 DYNAMIC = False
 
 if not DYNAMIC:
@@ -34,15 +34,15 @@ def load_from_file(path):
 def mat_by_mat(m1, m2):
 	# Multiply 2 matrices together
 	result = [[0, 0, 0, 0],
-          		[0, 0, 0, 0],
-          		[0, 0, 0, 0],
-          		[0, 0, 0, 0]]
+		  		[0, 0, 0, 0],
+		  		[0, 0, 0, 0],
+		  		[0, 0, 0, 0]]
 
 	for i in range(len(m1)):
-	       	for j in range(len(m2[0])):
-	       	   	for k in range(len(m2)):
-	       	   		result[i][j] += m1[i][k] * m2[k][j]
-
+		for j in range(len(m2[0])):
+			for k in range(len(m2)):
+				result[i][j] += m1[i][k] * m2[k][j]
+	
 	return result
 	 
 def vec_by_mat(v, m):
@@ -50,44 +50,44 @@ def vec_by_mat(v, m):
 	result = [0, 0, 0, 0]
 
 	for i in range(len(m)):
-	    for j in range(len(v)):
-	        result[i] += m[i][j] * v[j]
-	        
+		for j in range(len(v)):
+			result[i] += m[i][j] * v[j]
+			
 	return result
 	
 def rot_mat(x, y, z):
-    # Convert degrees to radians
-    x = math.radians(x)
-    y = math.radians(y)
-    z = math.radians(z)
+	# Convert degrees to radians
+	x = math.radians(x)
+	y = math.radians(y)
+	z = math.radians(z)
 
-    # Define X-axis rotation matrix
-    rx = [
-        [1, 0, 0, 0],
-        [0, math.cos(x), -math.sin(x), 0],
-        [0, math.sin(x), math.cos(x), 0],
-        [0, 0, 0, 1]
-    ]
+	# Define X-axis rotation matrix
+	rx = [
+		[1, 0, 0, 0],
+		[0, math.cos(x), -math.sin(x), 0],
+		[0, math.sin(x), math.cos(x), 0],
+		[0, 0, 0, 1]
+	]
 
-    # Define Y-axis rotation matrix
-    ry = [
-        [math.cos(y), 0, math.sin(y), 0],
-        [0, 1, 0, 0],
-        [-math.sin(y), 0, math.cos(y), 0],
-        [0, 0, 0, 1]
-    ]
+	# Define Y-axis rotation matrix
+	ry = [
+		[math.cos(y), 0, math.sin(y), 0],
+		[0, 1, 0, 0],
+		[-math.sin(y), 0, math.cos(y), 0],
+		[0, 0, 0, 1]
+	]
 
-    # Define Z-axis rotation matrix
-    rz = [
-        [math.cos(z), -math.sin(z), 0, 0],
-        [math.sin(z), math.cos(z), 0, 0],
-        [0, 0, 1, 0],
-        [0, 0, 0, 1]
-    ]
-    
-    rxy = mat_by_mat(rx, ry)
-    rxyz = mat_by_mat(rxy, rz)
-    return rxyz
+	# Define Z-axis rotation matrix
+	rz = [
+		[math.cos(z), -math.sin(z), 0, 0],
+		[math.sin(z), math.cos(z), 0, 0],
+		[0, 0, 1, 0],
+		[0, 0, 0, 1]
+	]
+	
+	rxy = mat_by_mat(rx, ry)
+	rxyz = mat_by_mat(rxy, rz)
+	return rxyz
 
 def transform(p, proj, size, rot):
 	m = mat_by_mat(proj, rot)
@@ -159,11 +159,6 @@ def draw():
 			goto(*point[:2])
 		goto(*startpoint[:2])
 		end_fill()
-		
-def event_ondrag():
-    print("Hello")
-    
-ondrag(event_ondrag)
 			
 ry = 120
 factor = 2
