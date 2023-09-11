@@ -5,10 +5,15 @@ import time, gzip, base64
 W, H = 500, 500
 FOV = 90
 SIZE = 0.1
-MODEL = "" # Your custom .obj model path
+MODEL = "pigeon.obj" # Your custom .obj model path
 WIDTH = 1
 SPEED = 0
 DYNAMIC = False
+
+CAM_DIR = [0, 0, -1]
+CAM_POS = [0, 0, -5]
+VERTICES = None
+FACES = None
 
 if not DYNAMIC:
 	tracer(0, 0)
@@ -29,7 +34,8 @@ def load_model(data):
 				ind = int(face.split("/")[0])-1
 				polygon.append(vertices[ind])
 			polygons.append(polygon)
-	polygons = np.array(polygons, dtype=np.float32)
+
+	polygons = np.array(polygons, dtype=object)
 	return polygons
 	
 def load_from_file(path):
@@ -68,8 +74,20 @@ def rot_mat(x, y, z):
 	
 	return rx @ ry @ rz
 
-def transform(p, proj, size, rot):
-	p = p @ rot @ size @ proj
+def normalize(v):
+    norm = np.linalg.norm(v)
+    if norm == 0: 
+       return v
+    return v / norm
+
+def transform(p, proj, view, size, rot):
+	# p = p @ rot @ size @ proj
+	p = proj @ view @ rot @ size @ p
+	return p
+
+def transform_screen(p, proj, view, size, rot):
+	# p = p @ rot @ size @ proj
+	p = transform(p, proj, view, size, rot)
 	return [
 		p[0]*W, p[1]*H, p[2]
 	]
@@ -98,6 +116,21 @@ projection = np.array([
 	[0, 0, -(2*zfar*znear)/zdiff, 0]
 ], dtype=np.float32)
 
+v_target = np.array(CAM_DIR, dtype=np.float32)
+v_pos = np.array(CAM_POS, dtype=np.float32)
+v_up = np.array([0, 1, 0], dtype=np.float32)
+
+v_forward = normalize(v_target - v_pos)
+v_right = normalize(np.cross(v_up, v_forward))
+v_new_up = np.cross(v_forward, v_right)
+
+view = np.array([
+	[v_right[0], v_new_up[0], -v_forward[0], 0],
+	[v_right[1], v_new_up[1], -v_forward[1], 0],
+	[v_right[2], v_new_up[2], -v_forward[2], 0],
+	[-np.dot(v_right, v_pos), -np.dot(v_new_up, v_pos), np.dot(v_forward, v_pos), 1]
+], dtype=np.float32)
+
 size = np.array([
 	[SIZE, 0, 0, 0],
 	[0, SIZE, 0, 0],
@@ -115,13 +148,24 @@ fillcolor("black")
 
 def depth_filter(vertices):
 	polygons = []
-	for vert in vertices:
-		v = []
-		for point in vert:
-			p = transform(point, projection, size, rot)
-			v.append(p)
-		polygons.append(v)
-	polygons = sorted(polygons, key=lambda x: max([i[2] for i in x])/len(x))
+
+	for ind, vert in enumerate(vertices):
+		v = [transform_screen(point, projection, view, size, rot) for point in vert]
+
+		v1 = np.array([v[0][0], v[0][1], v[0][2]])
+		v2 = np.array([v[1][0], v[1][1], v[1][2]])
+		v3 = np.array([v[2][0], v[2][1], v[2][2]])
+
+		edge1 = v2 - v1
+		edge2 = v3 - v1
+
+		face = np.cross(edge1, edge2)
+		face = face / np.linalg.norm(face)
+
+		result = np.dot(face, np.array(CAM_DIR, dtype=np.float32))
+		if result >= 0:
+			polygons.append(v)
+	# polygons = sorted(polygons, key=lambda x: max([i[2] for i in x])/len(x))
 	return polygons
 
 def draw():
@@ -131,11 +175,11 @@ def draw():
 		up()
 		setpos(*startpoint[:2])
 		down()
-		begin_fill()
+		# begin_fill()
 		for point in vert[1:]:
 			goto(*point[:2])
 		goto(*startpoint[:2])
-		end_fill()
+		# end_fill()
 
 global rotx, roty, factor
 rotx = 0
@@ -144,11 +188,11 @@ factor = 2
 
 def key_up():
 	global rotx 
-	rotx += 5
+	rotx -= 5
 
 def key_down():
 	global rotx
-	rotx -= 5
+	rotx += 5
 
 def key_left():
 	global factor
@@ -172,6 +216,7 @@ while 1:
 	draw()
 	if not DYNAMIC:
 		update()
-	time.sleep(0.015)
+	# time.sleep(0.015)
+	# time.sleep(2)
 
 mainloop()
